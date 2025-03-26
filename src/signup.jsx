@@ -23,7 +23,7 @@ const SignUp = () => {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    navigate("/login");
+    navigate("/Chatroom/login");
   };
 
   const togglePassword = () => {
@@ -88,7 +88,7 @@ const SignUp = () => {
         });
 
         toast.success("Signed up successfully!");
-        setTimeout(() => navigate("/dashboard"), 3000);
+        setTimeout(() => navigate("/Chatroom/dashboard"), 3000);
     } catch (err) {
         toast.error(err.message);
     } finally {
@@ -115,7 +115,7 @@ const SignUp = () => {
       );
   
       toast.success("Signed up successfully!");
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/Chatroom/dashboard"), 2000);
     } catch (err) {
       console.log(err)
       toast.error(err.message);

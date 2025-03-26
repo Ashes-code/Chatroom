@@ -12,9 +12,9 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/Chatroom/" element={<SignUp />} />
+        <Route path="/Chatroom/login" element={<Login />} />
+        <Route path="/Chatroom/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   )

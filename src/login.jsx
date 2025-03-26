@@ -14,7 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    navigate("/");
+    navigate("/Chatroom");
   };
   const togglePassword = () => {
     setShowPassword(!showPassword);
@@ -45,7 +45,7 @@ const Login = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await saveUserToFirestore(userCredential.user); // Save user data to Firestore
       toast.success("Login successful!");
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/Chatroom/dashboard"), 2000);
     } catch (err) {
       toast.error(err.message);
     }
@@ -57,7 +57,7 @@ const Login = () => {
       const userCredential = await signInWithPopup(auth, googleProvider);
       await saveUserToFirestore(userCredential.user); // Save Google user data
       toast.success("You are logged in!");
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/Chatroom/dashboard"), 2000);
     } catch (err) {
       toast.error(err.message);
     }
