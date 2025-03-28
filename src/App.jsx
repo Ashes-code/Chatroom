@@ -12,7 +12,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/Chatroom/" element={<SignUp />} />
+        <Route path="/" element={<SignUp />} />
         <Route path="/Chatroom/login" element={<Login />} />
         <Route path="/Chatroom/dashboard" element={<Dashboard />} />
       </Routes>

@@ -14,7 +14,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleNavigate = () => {
-    navigate("/Chatroom");
+    navigate("/");
   };
   const togglePassword = () => {
     setShowPassword(!showPassword);
