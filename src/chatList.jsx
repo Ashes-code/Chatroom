@@ -106,7 +106,7 @@ const ChatList = ({ setSelectedChat }) => {
     try {
       await signOut(auth);
       toast.success("Logged out successfully!");
-      navigate("/Chatroom/login");
+      navigate("/login");
     } catch (error) {
       toast.error(`Logout error: ${error.message}`);
     }
