@@ -115,7 +115,7 @@ const SignUp = () => {
       );
   
       toast.success("Signed up successfully!");
-      setTimeout(() => navigate("/Chatroom/dashboard"), 2000);
+      setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
       console.log(err)
       toast.error(err.message);
