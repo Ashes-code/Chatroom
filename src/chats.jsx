@@ -122,7 +122,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
         />
         <div className="flex flex-col">
           <span className="font-semibold text-lg">{selectedChat?.name || "Anonymous"}</span>
-          <span className="text-sm text-blue-600">Online</span>
+          {/* <span className="text-sm text-blue-600">Online</span> */}
         </div>
       </div>
 
