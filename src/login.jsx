@@ -66,7 +66,7 @@ const Login = () => {
   return (
     <div className="bg-gradient-to-b from-[#24013C] via-[#24013C] to-[#000000] flex flex-col items-center justify-center min-h-screen font-roboto">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="text-black p-8 rounded-lg shadow-lg xs:w-56 md:w-96 bg-white">
+      <div className="text-white p-8 rounded-lg shadow-lg xs:w-56 md:w-96 bg-gradient-to-b from-[#1d0130] via-[#24013C] to-[#570191]">
         <h2 className="text-2xl font-semibold text-center mb-4">Login</h2>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <input
@@ -101,11 +101,11 @@ const Login = () => {
         <hr className="my-4" />
         <button
           onClick={handleGoogleLogin}
-          className="bg-red-500 text-white py-2 rounded w-full hover:bg-red-600 cursor-pointer"
+          className="bg-[#24013C] text-white py-2 rounded w-full hover:bg-[#12011d] cursor-pointer"
         >
           Login with Google
         </button>
-        <p className="font-normal hover:underline flex flex-col items-end mt-3 text-black cursor-pointer" onClick={handleNavigate}>
+        <p className="font-normal hover:underline flex flex-col items-end mt-3 text-white cursor-pointer" onClick={handleNavigate}>
           Don't have an account? Sign Up
         </p>
       </div>

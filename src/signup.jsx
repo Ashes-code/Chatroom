@@ -134,15 +134,15 @@ const SignUp = () => {
   return (
     <div className="bg-gradient-to-b from-[#24013C] via-[#24013C] to-[#000000] flex flex-col items-center justify-center h-screen font-roboto">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="text-black px-6 rounded-lg shadow-lg sm:w-64 md:w-96 bg-white">
+      <div className="text-white px-6 rounded-lg shadow-3xl sm:w-64 md:w-96 bg-gradient-to-b from-[#1d0130] via-[#24013C] to-[#570191]">
         <h2 className="text-2xl font-semibold text-center my-3">Sign Up</h2>
         
          <form onSubmit={handleSignUp} className="flex flex-col gap-4 items-center ">
           <div className="flex flex-col items-center gap-3">
             <img
               src={profilePic || (previewPic && URL.createObjectURL(previewPic)) || "/default-avatar.png"}
-              alt="Profile"
-              className="mt-2 w-24 h-24 rounded-full object-cover border-2"
+              alt=""
+              className="mt-2 w-36 h-36 rounded-full object-cover border-2"
             />
             <input
               type="file"
@@ -193,11 +193,11 @@ const SignUp = () => {
         <hr className="my-2" />
         <button
           onClick={handleGoogleSignUp}
-          className="bg-red-500 text-white py-2 rounded w-full hover:bg-red-600 cursor-pointer"
+          className="bg-[#24013C] text-white py-2 rounded w-full hover:bg-[#12011d] cursor-pointer"
         >
           Sign Up with Google
         </button>
-        <p className="font-normal hover:underline flex flex-col items-end my-3 text-black cursor-pointer" onClick={handleNavigate}>
+        <p className="font-normal hover:underline flex flex-col items-end my-3 text-white cursor-pointer" onClick={handleNavigate}>
           Already have an account? Login
         </p>
       </div>
