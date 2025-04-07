@@ -6,16 +6,19 @@ import "react-toastify/dist/ReactToastify.css";
 import SignUp from "./signup";
 import Login from "./login";
 import Dashboard from "./dashboard";
+import AuthWrapper from "./authWrapper";
 
 function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<SignUp />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
+      <AuthWrapper>
+        <Routes>
+          <Route path="/" element={<SignUp />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </AuthWrapper>
     </Router>
   )
 }
