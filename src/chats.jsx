@@ -24,25 +24,58 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
 
+  // Authentication state
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      console.log("Auth state:", user); // Debug log
       setCurrentUser(user);
+      setLoading(false); // Stop loading once auth state is resolved
     });
     return () => unsubscribeAuth();
   }, []);
 
+  // Fetch chats
   useEffect(() => {
-    if (!selectedChat || !currentUser) return;
+    if (!selectedChat || !currentUser) {
+      setChats([]); // Clear chats if no user or chat selected
+      return;
+    }
 
     const chatId =
       currentUser.uid < selectedChat.id
         ? `${currentUser.uid}_${selectedChat.id}`
         : `${selectedChat.id}_${currentUser.uid}`;
+
+    // Mark messages as read when the chat is opened
+    const markMessagesAsRead = async () => {
+      const unreadQuery = query(
+        collection(db, "chats"),
+        where("chatId", "==", chatId),
+        where("receiverId", "==", currentUser.uid),
+        where("read", "==", false)
+      );
+      
+      try {
+        const querySnapshot = await getDocs(unreadQuery);
+        if (!querySnapshot.empty) {
+          const batch = [];
+          querySnapshot.forEach((doc) => {
+            batch.push(updateDoc(doc.ref, { read: true }));
+          });
+          await Promise.all(batch);
+        }
+      } catch (error) {
+        console.error("Error marking messages as read:", error);
+      }
+    };
+    
+    markMessagesAsRead();
 
     const q = query(
       collection(db, "chats"),
@@ -50,21 +83,39 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
       orderBy("timestamp", "asc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setChats(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const chatData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setChats(chatData);
+        
+        // Mark new messages as read as they arrive if this chat is open
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const msg = change.doc.data();
+            if (msg.receiverId === currentUser.uid && !msg.read) {
+              updateDoc(change.doc.ref, { read: true })
+                .catch(err => console.error("Error marking message as read:", err));
+            }
+          }
+        });
+      },
+      (error) => {
+        console.error("Error fetching chats:", error); // Log errors
+      }
+    );
 
     return () => unsubscribe();
   }, [selectedChat, currentUser]);
 
+  // Scroll to latest message
   useEffect(() => {
-    if (messagesEndRef.current) {
-      setTimeout(() => {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 100);
+    if (messagesEndRef.current && chats.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
   }, [chats]);
 
+  // Send message with error handling
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedChat || !currentUser) return;
 
@@ -73,39 +124,63 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
         ? `${currentUser.uid}_${selectedChat.id}`
         : `${selectedChat.id}_${currentUser.uid}`;
 
-    await addDoc(collection(db, "chats"), {
-      chatId,
-      userId: currentUser.uid,
-      user: currentUser.displayName || "Anonymous",
-      receiverId: selectedChat.id,
-      text: message,
-      timestamp: serverTimestamp(),
-      replyTo: replyToMessage ? { 
-        text: replyToMessage.text, 
-        user: replyToMessage.user,
-        messageId: replyToMessage.id 
-      } : null,
-    });
-
-    setMessage("");
-    setReplyToMessage(null);
+    try {
+      await addDoc(collection(db, "chats"), {
+        chatId,
+        userId: currentUser.uid,
+        user: currentUser.displayName || "Anonymous",
+        receiverId: selectedChat.id,
+        text: message,
+        timestamp: serverTimestamp(),
+        replyTo: replyToMessage
+          ? {
+              text: replyToMessage.text,
+              user: replyToMessage.user,
+              messageId: replyToMessage.id,
+            }
+          : null,
+        read: false,
+      });
+      console.log("Message sent successfully"); // Debug log
+      setMessage("");
+      setReplyToMessage(null);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message: " + error.message); // User feedback
+    }
   };
 
   const handleDelete = async (id) => {
-    await deleteDoc(doc(db, "chats", id));
+    try {
+      await deleteDoc(doc(db, "chats", id));
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
   };
 
   const handleEdit = async (id) => {
     if (newMessage.trim() === "") return;
-    await updateDoc(doc(db, "chats", id), { text: newMessage });
-    setEditingMessageId(null);
-    setNewMessage("");
+    try {
+      await updateDoc(doc(db, "chats", id), { text: newMessage });
+      setEditingMessageId(null);
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error editing message:", error);
+    }
   };
 
   const handleEmojiSelect = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
     setShowPicker(false);
   };
+
+  if (loading) {
+    return <div>Loading...</div>; // Show loading state while auth resolves
+  }
+
+  if (!currentUser) {
+    return <div>Please log in to view chats.</div>; // Handle unauthenticated state
+  }
 
   return (
     <div className="flex-3 flex flex-col h-full text-white shadow-md relative background">
@@ -118,6 +193,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
           src={selectedChat?.photoURL || selectedChat?.profilePic || profile}
           alt="User Profile"
           className="w-12 h-12 rounded-full object-cover mr-3"
+          title="User Profile"
         />
         <div className="flex flex-col">
           <span className="font-semibold text-lg">{selectedChat?.name || "Anonymous"}</span>
@@ -138,13 +214,16 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
           {chats.map((chat) => {
             const isSent = chat.userId === currentUser?.uid;
             const formattedTime = chat.timestamp?.seconds
-              ? new Date(chat.timestamp.seconds * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              ? new Date(chat.timestamp.seconds * 1000).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
               : "Sending...";
 
             return (
               <div
                 key={chat.id}
-                className={`flex ${isSent ? "justify-end" : "justify-start"} mx-3`}
+                className={`flex ${isSent ? "justify-end" : "justify-start"} mx-2`}
               >
                 {!isSent && (
                   <img
@@ -154,10 +233,11 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                   />
                 )}
 
-                <div className={`relative max-w-[15rem] lg:max-w-[30rem] px-3 py-2 rounded-lg shadow-lg flex flex-col
-                  ${isSent ? "bg-[#5f029c] text-white" : "bg-[#24013C] text-white"}`}>
-                  
-                  {/* Reply preview if this is a reply */}
+                <div
+                  className={`relative max-w-[15rem] lg:max-w-[30rem] px-3 py-2 rounded-lg shadow-lg flex flex-col ${
+                    isSent ? "bg-[#5f029c] text-white" : "bg-[#24013C] text-white"
+                  }`}
+                >
                   {chat.replyTo && (
                     <div className="text-xs mb-1 p-1 bg-black/20 rounded border-l-2 border-white/50 pl-2">
                       <div className="font-semibold">{chat.replyTo.user}</div>
@@ -177,18 +257,23 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                     ) : (
                       <span className="text-sm font-light">{chat.text}</span>
                     )}
-                    
+
                     <div className="relative ml-2">
-                      <button 
-                        onClick={() => setDropdownMessageId(dropdownMessageId === chat.id ? null : chat.id)}
+                      <button
+                        onClick={() =>
+                          setDropdownMessageId(dropdownMessageId === chat.id ? null : chat.id)
+                        }
                         className="text-white/50 hover:text-white focus:outline-none"
                       >
-                        <BiDotsVerticalRounded size={16} />
+                        <BiDotsVerticalRounded size={20} />
                       </button>
 
-                      {/* WhatsApp-like dropdown menu */}
                       {dropdownMessageId === chat.id && (
-                        <div className={`absolute w-24 ${isSent ? 'right-0' : 'left-0'} mt-1 bg-[#233138] rounded-md shadow-lg z-10 border border-gray-700`}>
+                        <div
+                          className={`absolute w-auto ${
+                            isSent ? "right-0" : "left-[2.5rem]"
+                          } mt-1 bg-[#233138] rounded-md shadow-lg z-10 border border-gray-700`}
+                        >
                           <button
                             onClick={() => {
                               setReplyToMessage(chat);
@@ -236,9 +321,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                   </div>
 
                   <div className="flex items-center justify-end mt-1 space-x-1">
-                    <span className="text-xs font-thin">
-                      {formattedTime}
-                    </span>
+                    <span className="text-xs font-thin">{formattedTime}</span>
                     {isSent && (
                       <span className="text-xs">
                         {chat.timestamp?.seconds ? <BiCheckDouble /> : <BiCheck />}
@@ -254,7 +337,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
         </div>
       </div>
 
-      {/* Reply Preview - Only shows for the current chat */}
+      {/* Reply Preview */}
       {replyToMessage && (
         <div className="mx-3 mb-2 px-3 py-2 rounded-lg bg-[#24013C] text-white shadow">
           <div className="flex justify-between items-center text-sm">
@@ -262,8 +345,8 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
               <span className="font-semibold">Replying to {replyToMessage.user}:</span>{" "}
               <span>{replyToMessage.text}</span>
             </div>
-            <button 
-              onClick={() => setReplyToMessage(null)} 
+            <button
+              onClick={() => setReplyToMessage(null)}
               className="ml-3 text-red-400 text-xs"
             >
               Cancel
@@ -274,16 +357,23 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
 
       {/* Input */}
       <div className="flex items-center border-2 p-3 mb-2 mx-3 rounded-lg bg-transparent">
-        <FaSmile className="text-white mr-3 cursor-pointer" onClick={() => setShowPicker(!showPicker)} />
+        <FaSmile
+          className="text-white mr-3 cursor-pointer"
+          onClick={() => setShowPicker(!showPicker)}
+        />
         <input
           type="text"
           placeholder="Type a message"
-          className="bg-transparent w-full outline-none text-sm"
+          className="resize-none bg-transparent w-full outline-none text-sm"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
         />
-        <FaPaperPlane className="text-white ml-3 cursor-pointer" onClick={handleSendMessage} size={20} />
+        <FaPaperPlane
+          className="text-white ml-3 cursor-pointer"
+          onClick={handleSendMessage}
+          size={20}
+        />
       </div>
 
       {showPicker && (

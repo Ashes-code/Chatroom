@@ -11,7 +11,7 @@ const AuthWrapper = ({ children }) => {
       if (user) {
         navigate("/dashboard");
       } else {
-        navigate("/signup");
+        navigate("/");
       }
     });
 
