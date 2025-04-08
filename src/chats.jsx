@@ -3,6 +3,7 @@ import "./App.css";
 import profile from "./assets/profile.png";
 import EmojiPicker from "emoji-picker-react";
 import { FaSmile, FaPaperPlane, FaArrowLeft } from "react-icons/fa";
+import { BiDotsVerticalRounded, BiCheck, BiCheckDouble } from "react-icons/bi";
 import { auth, db } from "./firebase";
 import {
   collection,
@@ -19,6 +20,7 @@ import {
 
 const WholeChats = ({ selectedChat, setSelectedChat }) => {
   const [message, setMessage] = useState("");
+  const [replyToMessage, setReplyToMessage] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
@@ -28,11 +30,9 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
   const [dropdownMessageId, setDropdownMessageId] = useState(null);
 
   useEffect(() => {
-    // Fetch current authenticated user
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       setCurrentUser(user);
     });
-
     return () => unsubscribeAuth();
   }, []);
 
@@ -57,16 +57,14 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
     return () => unsubscribe();
   }, [selectedChat, currentUser]);
 
-  // Scroll to the last message
   useEffect(() => {
     if (messagesEndRef.current) {
       setTimeout(() => {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest", });
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 100);
     }
   }, [chats]);
 
-  // Send Message
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedChat || !currentUser) return;
 
@@ -82,17 +80,21 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
       receiverId: selectedChat.id,
       text: message,
       timestamp: serverTimestamp(),
+      replyTo: replyToMessage ? { 
+        text: replyToMessage.text, 
+        user: replyToMessage.user,
+        messageId: replyToMessage.id 
+      } : null,
     });
 
     setMessage("");
+    setReplyToMessage(null);
   };
 
-  // Delete Message
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "chats", id));
   };
 
-  // Edit Message
   const handleEdit = async (id) => {
     if (newMessage.trim() === "") return;
     await updateDoc(doc(db, "chats", id), { text: newMessage });
@@ -100,21 +102,18 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
     setNewMessage("");
   };
 
-  // Handle Emoji Selection
   const handleEmojiSelect = (emojiObject) => {
     setMessage((prev) => prev + emojiObject.emoji);
-    console.log("Current Message:", message);
     setShowPicker(false);
   };
 
   return (
     <div className="flex-3 flex flex-col h-full text-white shadow-md relative background">
-      {/* User Profile Section */}
+      {/* Header */}
       <div className="bg-[#24013C] flex items-center mb-3 p-3">
         <button className="md:hidden text-white mr-3" onClick={() => setSelectedChat(null)}>
           <FaArrowLeft size={25} />
         </button>
-
         <img
           src={selectedChat?.photoURL || selectedChat?.profilePic || profile}
           alt="User Profile"
@@ -122,16 +121,15 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
         />
         <div className="flex flex-col">
           <span className="font-semibold text-lg">{selectedChat?.name || "Anonymous"}</span>
-          {/* <span className="text-sm text-blue-600">Online</span> */}
         </div>
       </div>
 
-      {/* Chat Messages */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto mb-2 scroll">
         <div className="space-y-2">
           {chats.length === 0 && (
             <div className="flex flex-col items-center">
-                <p className="text-center py-2 px-2 text-xl font-bold bg-white text-[#24013C] rounded-lg">
+              <p className="text-center py-2 px-2 text-xl font-bold bg-white text-[#24013C] rounded-lg">
                 No messages yet. Say hello!
               </p>
             </div>
@@ -146,8 +144,6 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
             return (
               <div
                 key={chat.id}
-                onMouseEnter={() => setDropdownMessageId(chat.id)}
-                onMouseLeave={() => setDropdownMessageId(null)}
                 className={`flex ${isSent ? "justify-end" : "justify-start"} mx-3`}
               >
                 {!isSent && (
@@ -158,65 +154,135 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                   />
                 )}
 
-                <div
-                  className={`relative max-w-[15rem] px-3 py-2 lg:max-w-[30rem] rounded-lg shadow-lg ${
-                    isSent ? "bg-[#5f029c] text-white" : "bg-[#24013C] text-white"
-                  }`}
-                >
-                  {editingMessageId === chat.id ? (
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      className="w-full bg-transparent border border-gray-300 text-sm p-1 rounded-md"
-                    />
-                  ) : (
-                    <div className="flex justify-between">
-                      <span className="text-sm font-light ">{chat.text}</span>
-                      <span className="text-xs font-thin ml-4 flex items-end">{formattedTime}</span>
+                <div className={`relative max-w-[15rem] lg:max-w-[30rem] px-3 py-2 rounded-lg shadow-lg flex flex-col
+                  ${isSent ? "bg-[#5f029c] text-white" : "bg-[#24013C] text-white"}`}>
+                  
+                  {/* Reply preview if this is a reply */}
+                  {chat.replyTo && (
+                    <div className="text-xs mb-1 p-1 bg-black/20 rounded border-l-2 border-white/50 pl-2">
+                      <div className="font-semibold">{chat.replyTo.user}</div>
+                      <div className="truncate">{chat.replyTo.text}</div>
                     </div>
                   )}
 
-                  {dropdownMessageId === chat.id && isSent && (
-                    <div className="absolute top-0 left-[-6rem] bg-gray-800/25 text-white text-xs rounded-lg shadow-md p-2 z-10">
-                      {editingMessageId === chat.id ? (
-                        <button onClick={() => handleEdit(chat.id)} className="w-full px-2 py-1 hover:bg-gray-700">
-                          Save
-                        </button>
-                      ) : (
-                        <>
-                          <button onClick={() => setEditingMessageId(chat.id)} className="w-full px-2 py-1 hover:bg-gray-700">
-                            Edit
+                  <div className="flex items-start justify-between">
+                    {editingMessageId === chat.id ? (
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        className="w-full mt-1 bg-white text-black text-sm p-1 rounded-md"
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="text-sm font-light">{chat.text}</span>
+                    )}
+                    
+                    <div className="relative ml-2">
+                      <button 
+                        onClick={() => setDropdownMessageId(dropdownMessageId === chat.id ? null : chat.id)}
+                        className="text-white/50 hover:text-white focus:outline-none"
+                      >
+                        <BiDotsVerticalRounded size={16} />
+                      </button>
+
+                      {/* WhatsApp-like dropdown menu */}
+                      {dropdownMessageId === chat.id && (
+                        <div className={`absolute w-24 ${isSent ? 'right-0' : 'left-0'} mt-1 bg-[#233138] rounded-md shadow-lg z-10 border border-gray-700`}>
+                          <button
+                            onClick={() => {
+                              setReplyToMessage(chat);
+                              setDropdownMessageId(null);
+                            }}
+                            className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                          >
+                            Reply
                           </button>
-                          <button onClick={() => handleDelete(chat.id)} className="w-full px-2 py-1 hover:bg-gray-700 text-red-400">
-                            Delete
-                          </button>
-                        </>
+                          {isSent && editingMessageId === chat.id ? (
+                            <button
+                              onClick={() => handleEdit(chat.id)}
+                              className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            isSent && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setEditingMessageId(chat.id);
+                                    setNewMessage(chat.text);
+                                    setDropdownMessageId(null);
+                                  }}
+                                  className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDelete(chat.id);
+                                    setDropdownMessageId(null);
+                                  }}
+                                  className="block w-full text-left px-2 py-1 text-xs text-red-400 hover:bg-[#182229]"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
+                  </div>
+
+                  <div className="flex items-center justify-end mt-1 space-x-1">
+                    <span className="text-xs font-thin">
+                      {formattedTime}
+                    </span>
+                    {isSent && (
+                      <span className="text-xs">
+                        {chat.timestamp?.seconds ? <BiCheckDouble /> : <BiCheck />}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
-          <div ref={messagesEndRef}></div>
 
+          <div ref={messagesEndRef}></div>
         </div>
       </div>
 
-      {/* Input Bar */}
+      {/* Reply Preview - Only shows for the current chat */}
+      {replyToMessage && (
+        <div className="mx-3 mb-2 px-3 py-2 rounded-lg bg-[#24013C] text-white shadow">
+          <div className="flex justify-between items-center text-sm">
+            <div>
+              <span className="font-semibold">Replying to {replyToMessage.user}:</span>{" "}
+              <span>{replyToMessage.text}</span>
+            </div>
+            <button 
+              onClick={() => setReplyToMessage(null)} 
+              className="ml-3 text-red-400 text-xs"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
       <div className="flex items-center border-2 p-3 mb-2 mx-3 rounded-lg bg-transparent">
         <FaSmile className="text-white mr-3 cursor-pointer" onClick={() => setShowPicker(!showPicker)} />
-
         <input
           type="text"
           placeholder="Type a message"
-          className="bg-transparent w-full outline-none text-sm font-"
+          className="bg-transparent w-full outline-none text-sm"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
         />
-
         <FaPaperPlane className="text-white ml-3 cursor-pointer" onClick={handleSendMessage} size={20} />
       </div>
 
