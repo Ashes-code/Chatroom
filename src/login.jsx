@@ -44,7 +44,7 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await saveUserToFirestore(userCredential.user); // Save user data to Firestore
-      toast.success("Login successful!");
+      toast.success("Login successful!", {theme: "dark"});
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
       toast.error(err.message);
@@ -56,7 +56,7 @@ const Login = () => {
     try {
       const userCredential = await signInWithPopup(auth, googleProvider);
       await saveUserToFirestore(userCredential.user); // Save Google user data
-      toast.success("You are logged in!");
+      toast.success("You are logged in!", {theme: "dark"});
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
       toast.error(err.message);

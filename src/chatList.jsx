@@ -19,7 +19,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const ChatList = ({ setSelectedChat }) => {
+const ChatList = ({ setSelectedChat }) => { 
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -79,7 +79,7 @@ const ChatList = ({ setSelectedChat }) => {
           
           if (message.timestamp?.seconds > Date.now() / 1000 - 10) {
             toast.info(`📩 New message from ${message.user}: ${message.text}`, {
-              position: "top-right",
+              position: "bottom-right",
               autoClose: 3000,
               theme: "dark",
             });

@@ -87,7 +87,7 @@ const SignUp = () => {
             profilePic: user.photoURL || "",
         });
 
-        toast.success("Signed up successfully!");
+        toast.success("Signed up successfully!", {theme: "dark"});
         setTimeout(() => navigate("/dashboard"), 3000);
     } catch (err) {
         toast.error(err.message);
@@ -114,7 +114,9 @@ const SignUp = () => {
         { merge: true } // Prevent overwriting existing data
       );
   
-      toast.success("Signed up successfully!");
+      toast.success("Signed up successfully!", {
+        theme: "dark"
+      });
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
       console.log(err)
