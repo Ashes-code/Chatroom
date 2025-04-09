@@ -279,7 +279,7 @@ const ChatList = ({ setSelectedChat }) => {
                 <span>{user.name || "Unknown"}</span>
               </div>
               {unreadCounts[user.id] > 0 && (
-                <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   {unreadCounts[user.id]}
                 </span>
               )}
