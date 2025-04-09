@@ -3,6 +3,8 @@ import "./App.css";
 import profile from "./assets/profile.png";
 import EmojiPicker from "emoji-picker-react";
 import { FaSmile, FaPaperPlane, FaArrowLeft } from "react-icons/fa";
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 import { BiDotsVerticalRounded, BiCheck, BiCheckDouble } from "react-icons/bi";
 import { auth, db } from "./firebase";
 import {
@@ -25,6 +27,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
   const [showPicker, setShowPicker] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [chats, setChats] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -193,9 +196,11 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
         <img
           src={selectedChat?.photoURL || selectedChat?.profilePic || profile}
           alt="User Profile"
-          className="w-12 h-12 rounded-full object-cover mr-3"
-          title="User Profile"
+          title={selectedChat.name}
+          className="w-12 h-12 rounded-full object-cover mr-3 cursor-pointer"
+          onClick={() => setSelectedImage(selectedChat?.photoURL || selectedChat?.profilePic || profile)}
         />
+
         <div className="flex flex-col">
           <span className="font-semibold text-lg">{selectedChat?.name || "Anonymous"}</span>
         </div>
@@ -382,6 +387,29 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
           <EmojiPicker onEmojiClick={handleEmojiSelect} theme="dark" height={400} width={300} />
         </div>
       )}
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 py-10"
+          onClick={() => setSelectedImage(null)}
+        >
+          <Zoom>
+            <img
+              src={selectedImage}
+              alt="Full View"
+              className="max-w-full max-h-full rounded-md shadow-lg"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image
+            />
+          </Zoom>
+          <button
+            className="absolute top-4 right-4 text-white text-xl bg-gray-800 px-3 py-1 rounded-full hover:bg-gray-600"
+            onClick={() => setSelectedImage(null)}
+          >
+            ✕
+          </button>
+        </div>
+      )}      
+
     </div>
   );
 };
