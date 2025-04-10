@@ -285,14 +285,14 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                               setReplyToMessage(chat);
                               setDropdownMessageId(null);
                             }}
-                            className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                            className="block w-full text-left px-3 py-2 text-xs hover:bg-[#182229]"
                           >
                             Reply
                           </button>
                           {isSent && editingMessageId === chat.id ? (
                             <button
                               onClick={() => handleEdit(chat.id)}
-                              className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                              className="block w-full text-left px-3 py-2 text-xs hover:bg-[#182229]"
                             >
                               Save
                             </button>
@@ -305,7 +305,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                                     setNewMessage(chat.text);
                                     setDropdownMessageId(null);
                                   }}
-                                  className="block w-full text-left px-2 py-1 text-xs hover:bg-[#182229]"
+                                  className="block w-full text-left px-3 py-2 text-xs hover:bg-[#182229]"
                                 >
                                   Edit
                                 </button>
@@ -314,7 +314,7 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                                     handleDelete(chat.id);
                                     setDropdownMessageId(null);
                                   }}
-                                  className="block w-full text-left px-2 py-1 text-xs text-red-400 hover:bg-[#182229]"
+                                  className="block w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-[#182229]"
                                 >
                                   Delete
                                 </button>
@@ -330,7 +330,13 @@ const WholeChats = ({ selectedChat, setSelectedChat }) => {
                     <span className="text-xs font-thin">{formattedTime}</span>
                     {isSent && (
                       <span className="text-xs">
-                        {chat.timestamp?.seconds ? <BiCheckDouble /> : <BiCheck />}
+                        {chat.read ? (
+                          <BiCheckDouble className="text-white" /> // ✅ Seen: white
+                        ) : chat.timestamp?.seconds ? (
+                          <BiCheckDouble className="text-black" /> // ✅ Delivered: black
+                        ) : (
+                          <BiCheck className="text-red-400" /> // ✅ Just sent: red
+                        )}
                       </span>
                     )}
                   </div>
